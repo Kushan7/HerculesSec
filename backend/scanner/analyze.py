@@ -2,38 +2,38 @@ import os
 from typing import Dict, Any, List
 
 from backend.scanner.utils import load_code_file, sanitize_code, extract_keywords
-from backend.llm.openai_integration import ask_llm_with_prompt
+from backend.llm.gemini_ai_integration import analyze_code_with_gemini
 from backend.db.exploitdb_lookup import search_exploitdb
+import json
 
-PROMPT_FILE = "backend/llm/prompts/owasp_top10.txt"
-
-def analyze_code_with_llm(file_path: str) -> Dict[str, Any]:
+def analyze_file_for_vulnerabilities(file_path: str) -> Dict[str, Any]:
     try:
         raw_code = load_code_file(file_path)
         clean_code = sanitize_code(raw_code)
 
-        with open(PROMPT_FILE, "r", encoding="utf-8") as f:
-            prompt_instructions = f.read()
+        # Call Gemini model to analyze code
+        llm_response = analyze_code_with_gemini(clean_code)
 
-        full_prompt = f"""{prompt_instructions}
+        try:
+            parsed_response = json.loads(llm_response)
+            vulnerabilities = parsed_response.get("vulnerabilities", [])
+        except json.JSONDecodeError:
+            # If LLM didn't return valid JSON, return the raw text
+            vulnerabilities = llm_response
 
-Code:
-
-{clean_code}
-"""
-
-        response = ask_llm_with_prompt(full_prompt)
-
-        # Extract keywords like "XSS", "SQL Injection"
+        # Enrich results with ExploitDB links
         enrichments = []
-        for vuln in extract_keywords(response):
-            matched_exploits = search_exploitdb(vuln)
-            if matched_exploits:
-                enrichments.append({vuln: matched_exploits})
+        if isinstance(vulnerabilities, list):
+            for vuln in vulnerabilities:
+                vuln_type = vuln.get("type")
+                if vuln_type:
+                    matched_exploits = search_exploitdb(vuln_type)
+                    if matched_exploits:
+                        enrichments.append({vuln_type: matched_exploits})
 
         return {
             "file": os.path.basename(file_path),
-            "vulnerabilities": response,
+            "vulnerabilities": vulnerabilities,
             "exploitdb_links": enrichments
         }
 

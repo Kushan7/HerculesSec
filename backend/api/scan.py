@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 import os
 import tempfile
 
-from backend.scanner.analyze import analyze_code_with_llm
+from backend.scanner.analyze import analyze_file_for_vulnerabilities  # updated function name
 
 router = APIRouter()
 
@@ -17,8 +17,8 @@ async def scan_code(file: UploadFile = File(...)):
             tmp.write(contents)
             tmp_path = tmp.name
 
-        # Analyze the file using LLM
-        result = analyze_code_with_llm(tmp_path)
+        # Analyze the file using Gemini
+        result = analyze_file_for_vulnerabilities(tmp_path)
 
         # Clean up
         os.remove(tmp_path)
