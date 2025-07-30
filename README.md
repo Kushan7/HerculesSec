@@ -19,23 +19,7 @@ Hercules Secure is an AI-powered backend microservice designed to scan uploaded 
 
 ---
 
-## 📦 Folder Structure
 
-```
-hercules-secure/
-│
-├── backend/
-│   ├── scanner/
-│   │   └── analyze.py      # Gemini-based code analyzer
-│   └── routes/
-│       └── scan.py         # FastAPI upload + processing route
-│
-├── main.py                 # FastAPI app launcher
-├── .env                    # Your Gemini API key
-└── requirements.txt
-```
-
----
 
 ## ⚙️ Setup Instructions
 
